@@ -1,4 +1,4 @@
-defmodule PlaceScrapper.Scraper.Adapter.TripAdvisor do
+defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
   require Logger
   @trip_advisor_url "https://www.tripadvisor.com"
   @user_agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36"

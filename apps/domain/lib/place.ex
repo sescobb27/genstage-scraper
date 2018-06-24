@@ -1,4 +1,4 @@
-defmodule PlaceScrapper.Place do
+defmodule PlaceScraper.Place do
   defstruct [
     :name,
     :location,
@@ -13,7 +13,7 @@ defmodule PlaceScrapper.Place do
     images: [],
     tags: [],
     hours_open: [],
-    city: %PlaceScrapper.City{},
+    city: %PlaceScraper.City{},
     categories: []
   ]
 

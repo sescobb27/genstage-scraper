@@ -1,4 +1,4 @@
-defmodule PlaceScrapper.Category do
+defmodule PlaceScraper.Category do
   defstruct [:name, places: []]
 
   def new(place_attrs \\ []) do

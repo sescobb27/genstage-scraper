@@ -1,4 +1,4 @@
-# PlaceScrapper
+# PlaceScraper
 
 **TODO: Add description**
 

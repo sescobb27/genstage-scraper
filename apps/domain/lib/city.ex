@@ -1,4 +1,4 @@
-defmodule PlaceScrapper.City do
+defmodule PlaceScraper.City do
   defstruct [:name, :name_slug, :country, places: []]
 
   def new(place_attrs \\ []) do

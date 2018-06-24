@@ -1,4 +1,4 @@
-defmodule PlaceScrapper.MixProject do
+defmodule PlaceScraper.MixProject do
   use Mix.Project
 
   def project do
