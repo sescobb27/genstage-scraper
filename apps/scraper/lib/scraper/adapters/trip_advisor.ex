@@ -1,13 +1,13 @@
 defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
   @moduledoc """
-  alias PlaceScraper.Scraper.Adapter.TripAdvisor
-  url = "/Restaurants-g297478-Medellin_Antioquia_Department.html"
-  {:ok, page} = TripAdvisor.get_page(url)
-  restaurant_links = TripAdvisor.get_restaurant_links(page)
-  pagination_links = TripAdvisor.generate_pagination_links(url, page)
+  Usage:
+    alias PlaceScraper.Scraper.Adapter.TripAdvisor
+    url = "/Restaurants-g297478-Medellin_Antioquia_Department.html"
+    {:ok, page} = TripAdvisor.get_page(url)
+    pagination_links = TripAdvisor.generate_pagination_links(url, page)
 
-  {:ok, pampa_page} = TripAdvisor.get_page("/Restaurant_Review-g297478-d5999925-Reviews-La_Pampa_Parrilla_Argentina-Medellin_Antioquia_Department.html")
-  TripAdvisor.parse_restaurant_page(pampa_page)
+    {:ok, pampa_page} = TripAdvisor.get_page("/Restaurant_Review-g297478-d5999925-Reviews-La_Pampa_Parrilla_Argentina-Medellin_Antioquia_Department.html")
+    TripAdvisor.parse_restaurant_page(pampa_page)
   """
 
   require Logger
@@ -45,14 +45,6 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
     end
   end
 
-  def get_restaurant_links(page) do
-    Floki.find(
-      page,
-      "#EATERY_LIST_CONTENTS #EATERY_SEARCH_RESULTS .listing.rebrand .shortSellDetails .title a"
-    )
-    |> Floki.attribute("href")
-  end
-
   def generate_pagination_links(url, page) do
     ranges =
       Floki.find(page, "#EATERY_LIST_CONTENTS .pageNumbers a")
@@ -66,12 +58,14 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
 
     {_, links} =
       Enum.reduce(start..last, {1, []}, fn _pag, {count, acc} ->
-        items = count * 30
-        formated_url = String.split(url, "-") |> List.insert_at(2, "oa#{items}") |> Enum.join("-")
-        {count + 1, [formated_url <> "#EATERY_LIST_CONTENTS" | acc]}
+        page = count * 30
+
+        formated_url = generate_pagination_link(url, page)
+
+        {count + 1, [formated_url | acc]}
       end)
 
-    links |> Enum.reverse()
+      [url <> "#EATERY_LIST_CONTENTS" | links |> Enum.reverse()]
   end
 
   def parse_restaurant_page(page) do
@@ -106,6 +100,17 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
       tags: tags,
       categories: Enum.concat(tags, parse_category_tags) |> map_tags()
     )
+  end
+
+  defp generate_pagination_link(url, page) do
+    join_with_location_hash = fn formated_url ->
+      formated_url <> "#EATERY_LIST_CONTENTS"
+    end
+
+    String.split(url, "-")
+    |> List.insert_at(2, "oa#{page}")
+    |> Enum.join("-")
+    |> join_with_location_hash.()
   end
 
   defp parse_hours_open(page) do
