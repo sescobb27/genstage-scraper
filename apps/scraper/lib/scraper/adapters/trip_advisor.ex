@@ -82,11 +82,7 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
     images = parse_images(page)
     parse_category_tags = parse_category_tags(header)
     hours_open = parse_hours_open(page)
-
-    [lat_str | _] = Regex.run(~r/lat: ([-+]?[0-9]*\.?[0-9]+)/, page, capture: :all_but_first)
-    [lon_str | _] = Regex.run(~r/lng: ([-+]?[0-9]*\.?[0-9]+)/, page, capture: :all_but_first)
-    {lat, _} = Float.parse(lat_str)
-    {lon, _} = Float.parse(lon_str)
+    {lat, lon} = parse_location(page)
 
     Place.new(
       name: name,
@@ -216,6 +212,14 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
       Floki.text(rest)
       |> String.downcase()
     end)
+  end
+
+  defp parse_location(page) do
+    [lat_str | _] = Regex.run(~r/lat: ([-+]?[0-9]*\.?[0-9]+)/, page, capture: :all_but_first)
+    [lon_str | _] = Regex.run(~r/lng: ([-+]?[0-9]*\.?[0-9]+)/, page, capture: :all_but_first)
+    {lat, _} = Float.parse(lat_str)
+    {lon, _} = Float.parse(lon_str)
+    {lat, lon}
   end
 
   # input format:
