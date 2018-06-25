@@ -5,13 +5,15 @@ defmodule Scraper.Application do
 
   use Application
 
+  alias PlaceScraper.Scraper.Pipeline.PlaceScraperSupervisor
+
   def start(_type, _args) do
-    import Supervisor.Spec
     # List all child processes to be supervised
     children = [
       # Starts a worker by calling: Scraper.Worker.start_link(arg)
       # {Scraper.Worker, arg},
-      supervisor(Task.Supervisor, [[name: Twd.ScraperTaskSupervisor]]),
+      {PlaceScraperSupervisor, []},
+      {Task.Supervisor, [name: TaskSupervisor]},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
