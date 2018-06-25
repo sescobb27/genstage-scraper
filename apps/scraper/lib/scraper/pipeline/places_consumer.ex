@@ -13,6 +13,9 @@ defmodule PlaceScraper.Scraper.Pipeline.PlacesConsumer do
   def init(partition) do
     demand = Application.get_env(:twd, :places_demand, 5)
 
+    # REFERENCE:
+    # https://elixirforum.com/t/genstage-subscribing-multiple-stages-on-start-up/2053/4
+    # https://github.com/wfgilman/stage_test
     producer = :"#{@producer}#{partition}"
 
     {

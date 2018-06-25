@@ -5,6 +5,9 @@ defmodule PlaceScraper.Scraper.Pipeline.PlacesProducer do
   @producer PlaceScraper.Scraper.Pipeline.PaginationProducer
 
   def start_link(partition) do
+    # REFERENCE:
+    # https://elixirforum.com/t/genstage-subscribing-multiple-stages-on-start-up/2053/4
+    # https://github.com/wfgilman/stage_test
     name = :"#{__MODULE__}#{partition}"
     GenStage.start_link(__MODULE__, partition, name: name)
   end
