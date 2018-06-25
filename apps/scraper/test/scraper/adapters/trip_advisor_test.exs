@@ -1,6 +1,6 @@
-defmodule PlaceScraper.Scraper.Adapter.TripAdvisorTest do
+defmodule PlaceScraper.Scraper.Adapters.TripAdvisorTest do
   use ExUnit.Case, async: true
-  alias PlaceScraper.Scraper.Adapter.TripAdvisor
+  alias PlaceScraper.Scraper.Adapters.TripAdvisor
   alias PlaceScraper.{Place, Category}
 
   describe "main page" do
@@ -55,10 +55,8 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisorTest do
       ]
 
       links =
-        TripAdvisor.generate_pagination_links(
-          "/Restaurants-g297478-Medellin_Antioquia_Department.html",
-          fixture_file
-        )
+        %TripAdvisor{url: "/Restaurants-g297478-Medellin_Antioquia_Department.html"}
+        |> TripAdvisor.generate_pagination_links(fixture_file)
 
       assert links == expected_links
     end
@@ -155,8 +153,54 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisorTest do
         Path.join([cwd, "test", "fixtures", "trip_advisor", "bogota.html"])
         |> File.read!()
 
-      links = TripAdvisor.generate_pagination_links("/Restaurants-g294074-Bogota.html", file)
+      links =
+        %TripAdvisor{url: "/Restaurants-g294074-Bogota.html"}
+        |> TripAdvisor.generate_pagination_links(file)
+
       assert links == expected_links
+    end
+
+    test "it gets the place links from the main city page" do
+      {:ok, cwd} = File.cwd()
+
+      fixture_file =
+        Path.join([cwd, "test", "fixtures", "trip_advisor", "medellin.html"])
+        |> File.read!()
+
+      links = TripAdvisor.get_place_links(fixture_file)
+
+      assert links == [
+               "/Restaurant_Review-g297478-d5999925-Reviews-La_Pampa_Parrilla_Argentina-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d2319382-Reviews-Toscano-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d784998-Reviews-La_Provincia-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d3841228-Reviews-Turban_Kabab_House-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d7388518-Reviews-Restaurante_Barcal-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d7110734-Reviews-Kabuki_Cocina_Peruana_Y_Japonesa-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d4733262-Reviews-Oci_Mde-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d10770074-Reviews-Barbaro_Cocina_Primitiva-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d2637216-Reviews-Versalles-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d7020539-Reviews-Restaurante_Malevo-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d7694445-Reviews-La_Pampa_Burger_Ribs-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d11756812-Reviews-El_Mercado_del_Rio-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d1820198-Reviews-Carmen-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d10374330-Reviews-Cavieli_Ristorante_Caffe_Pizzeria-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d6889889-Reviews-Cambria_Cafe_Resto-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d2450488-Reviews-Chef_Burger-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d1862119-Reviews-Mondongos-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d2085950-Reviews-Restaurante_In_Situ-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d3680682-Reviews-Cafe_Zorba-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d8664488-Reviews-Palazzetto-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d8488522-Reviews-Bariloche_Parrilla_Argentina-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d1030724-Reviews-El_Cielo-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d5003135-Reviews-Hacienda_Junin-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d12570560-Reviews-Miceviche-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d7622046-Reviews-Alambique-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d813294-Reviews-Il_Forno_Colombia-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d8508221-Reviews-BURDO-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d9555654-Reviews-Shanti_Cocina_Vital-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d3543175-Reviews-Restaurant_Hatoviejo-Medellin_Antioquia_Department.html",
+               "/Restaurant_Review-g297478-d4506437-Reviews-El_Correo_Carne_y_Vino-Medellin_Antioquia_Department.html"
+             ]
     end
   end
 
@@ -167,7 +211,7 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisorTest do
       place =
         Path.join([cwd, "test", "fixtures", "trip_advisor", "pampa_argentina.html"])
         |> File.read!()
-        |> TripAdvisor.parse_restaurant_page()
+        |> TripAdvisor.parse_place_page()
 
       assert %Place{} = place
       assert place.expense == "$$ - $$$"
@@ -222,7 +266,7 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisorTest do
       place =
         Path.join([cwd, "test", "fixtures", "trip_advisor", "casa_molina.html"])
         |> File.read!()
-        |> TripAdvisor.parse_restaurant_page()
+        |> TripAdvisor.parse_place_page()
 
       assert %Place{} = place
       assert place.address == "Indiana Mall - Alto de las Palmas, Medellin, Colombia"

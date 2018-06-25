@@ -1,18 +1,22 @@
-defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
+defmodule PlaceScraper.Scraper.Adapters.TripAdvisor do
   @moduledoc """
   Usage:
-    alias PlaceScraper.Scraper.Adapter.TripAdvisor
-    url = "/Restaurants-g297478-Medellin_Antioquia_Department.html"
-    {:ok, page} = TripAdvisor.get_page(url)
+    alias PlaceScraper.Scraper.Adapters.TripAdvisor
+    main_url = "/Restaurants-g297478-Medellin_Antioquia_Department.html"
+    {:ok, page} = TripAdvisor.get_page(%TripAdvisor{url: main_url})
     pagination_links = TripAdvisor.generate_pagination_links(url, page)
 
-    {:ok, pampa_page} = TripAdvisor.get_page("/Restaurant_Review-g297478-d5999925-Reviews-La_Pampa_Parrilla_Argentina-Medellin_Antioquia_Department.html")
-    TripAdvisor.parse_restaurant_page(pampa_page)
+    place_url = "/Restaurant_Review-g297478-d5999925-Reviews-La_Pampa_Parrilla_Argentina-Medellin_Antioquia_Department.html"
+    {:ok, pampa_page} = TripAdvisor.get_page(%TripAdvisor{url: place_url})
+    TripAdvisor.parse_place_page(pampa_page)
   """
 
   require Logger
 
   alias PlaceScraper.{Place, Category}
+  alias PlaceScraper.Scraper.Adapters.TripAdvisor
+
+  defstruct url: ""
 
   @trip_advisor_url "https://www.tripadvisor.com"
   @user_agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36"
@@ -24,28 +28,28 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
     "cafe" => ["cafe", "café", "coffe", "coffee & tea in medellin", "dessert in medellin"]
   }
 
-  def get_page(link) when is_binary(link) do
+  def new(attrs \\ []) do
+    struct!(__MODULE__, attrs)
+  end
+
+  def get_page(%TripAdvisor{url: link}) when is_binary(link) do
     link
     |> build_url()
     |> fetch_page()
     |> case do
-      {:ok, %HTTPoison.Response{status_code: 200, body: page}} ->
-        {:ok, page}
+      {:ok, page} = response ->
+        response
 
-      {:ok, %HTTPoison.Response{status_code: _} = response} ->
-        Logger.error("error fetching link: #{link} response: #{inspect(response)}")
+      {:error, :timeout} ->
         :error
 
-      {:error, %HTTPoison.Error{reason: :timeout}} ->
-        :timeout
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.error("error fetching link: #{link} reason: #{inspect(reason)}")
+      {:error, response} ->
+        Logger.error("error fetching link: #{link} response: #{inspect(response)}")
         :error
     end
   end
 
-  def generate_pagination_links(url, page) do
+  def generate_pagination_links(%TripAdvisor{url: url}, page) do
     ranges =
       Floki.find(page, "#EATERY_LIST_CONTENTS .pageNumbers a")
       # ["2", "3", "4", "5", "6", "40"]
@@ -65,10 +69,18 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
         {count + 1, [formated_url | acc]}
       end)
 
-      [url <> "#EATERY_LIST_CONTENTS" | links |> Enum.reverse()]
+    [url <> "#EATERY_LIST_CONTENTS" | links |> Enum.reverse()]
   end
 
-  def parse_restaurant_page(page) do
+  def get_place_links(page) do
+    Floki.find(
+      page,
+      "#EATERY_LIST_CONTENTS #EATERY_SEARCH_RESULTS .listing.rebrand .shortSellDetails .title a"
+    )
+    |> Floki.attribute("href")
+  end
+
+  def parse_place_page(page) do
     header = Floki.find(page, "#taplc_location_detail_header_restaurants_0")
     name = Floki.find(header, "#HEADING") |> Floki.text() |> String.trim()
 
@@ -120,7 +132,7 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
   end
 
   defp fetch_page(link) do
-    HTTPoison.get(
+    ReqWithBackoff.fetch(
       link,
       [
         {"User-Agent", @user_agent},
@@ -257,6 +269,40 @@ defmodule PlaceScraper.Scraper.Adapter.TripAdvisor do
     |> case do
       [] -> ["restaurant"]
       tags -> tags
+    end
+  end
+end
+
+defimpl PlaceScaper.Scraper, for: PlaceScraper.Scraper.Adapters.TripAdvisor do
+  alias PlaceScraper.Scraper.Adapters.TripAdvisor
+
+  def scrape_pagination_url(tripadvisor) do
+    case TripAdvisor.get_page(tripadvisor) do
+      {:ok, page} ->
+        TripAdvisor.generate_pagination_links(tripadvisor, page)
+
+      :error ->
+        []
+    end
+  end
+
+  def scrape_places_from_pagination_url(tripadvisor) do
+    case TripAdvisor.get_page(tripadvisor) do
+      {:ok, page} ->
+        TripAdvisor.get_place_links(page)
+
+      :error ->
+        []
+    end
+  end
+
+  def scrape_place_url(tripadvisor) do
+    case TripAdvisor.get_page(tripadvisor) do
+      {:ok, page} ->
+        TripAdvisor.parse_place_page(page)
+
+      :error ->
+        nil
     end
   end
 end
