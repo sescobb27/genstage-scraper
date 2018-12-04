@@ -37,7 +37,7 @@ defmodule PlaceScraper.Scraper.Adapters.TripAdvisor do
     |> build_url()
     |> fetch_page()
     |> case do
-      {:ok, page} = response ->
+      {:ok, _page} = response ->
         response
 
       {:error, :timeout} ->
@@ -81,6 +81,16 @@ defmodule PlaceScraper.Scraper.Adapters.TripAdvisor do
   end
 
   def parse_place_page(page) do
+    # when scraping places, TripAdvisor returns (sometimes) mobile pages with other
+    # classes/dom elements than the normal ones, breaking the whole scraper so we need to retry
+    # at least 3 times to fetch the page that works for us
+    case Floki.find(page, "#taplc_location_detail_header_restaurants_0") do
+      [] -> {:error, :invalid_page}
+      _ -> do_parse_place_page(page)
+    end
+  end
+
+  defp do_parse_place_page(page) do
     header = Floki.find(page, "#taplc_location_detail_header_restaurants_0")
     name = Floki.find(header, "#HEADING") |> Floki.text() |> String.trim()
 
@@ -274,6 +284,7 @@ defmodule PlaceScraper.Scraper.Adapters.TripAdvisor do
 end
 
 defimpl PlaceScaper.Scraper, for: PlaceScraper.Scraper.Adapters.TripAdvisor do
+  require Logger
   alias PlaceScraper.Scraper.Adapters.TripAdvisor
 
   def scrape_pagination_url(tripadvisor) do
@@ -296,10 +307,20 @@ defimpl PlaceScaper.Scraper, for: PlaceScraper.Scraper.Adapters.TripAdvisor do
     end
   end
 
-  def scrape_place_url(tripadvisor) do
+  def scrape_place_url(tripadvisor, retries \\ 5)
+
+  def scrape_place_url(tripadvisor, 0) do
+    Logger.error("error fetching link: #{inspect(tripadvisor)} reason: out of retries")
+    nil
+  end
+
+  def scrape_place_url(tripadvisor, retries) do
     case TripAdvisor.get_page(tripadvisor) do
       {:ok, page} ->
-        TripAdvisor.parse_place_page(page)
+        case TripAdvisor.parse_place_page(page) do
+          {:error, :invalid_page} -> scrape_place_url(tripadvisor, retries - 1)
+          place -> place
+        end
 
       :error ->
         nil

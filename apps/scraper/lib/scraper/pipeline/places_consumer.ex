@@ -31,7 +31,7 @@ defmodule PlaceScraper.Scraper.Pipeline.PlacesConsumer do
   def handle_events(events, _from, state) do
     places =
       events
-      |> Enum.map(fn {adapter, city, url} ->
+      |> Enum.map(fn {adapter, _city, url} ->
         apply(adapter, :new, [[url: url]])
         |> PlaceScaper.Scraper.scrape_place_url()
       end)
@@ -39,14 +39,5 @@ defmodule PlaceScraper.Scraper.Pipeline.PlacesConsumer do
     Logger.info("[PlacesConsumer] #{inspect(places)}")
 
     {:noreply, [], state}
-  end
-
-  defp take_links(queue, 0, links), do: {links, {queue, 0}}
-
-  defp take_links(queue, n, links) when n > 0 do
-    case :queue.out(queue) do
-      {:empty, ^queue} -> {links, {queue, n}}
-      {{:value, link}, queue} -> take_links(queue, n - 1, [link | links])
-    end
   end
 end

@@ -24,8 +24,8 @@ defmodule PlaceScraper.Scraper.Pipeline.PaginationProducer do
     {items, state} =
       apply(adapter, :new, [[url: url]])
       |> PlaceScaper.Scraper.scrape_pagination_url()
-      |> Enum.reduce(queue, fn pagination_link, acc ->
-        :queue.in({adapter, city, pagination_link}, queue)
+      |> Enum.reduce(new_queue, fn pagination_link, acc ->
+        :queue.in({adapter, city, pagination_link}, acc)
       end)
       |> take_links(pending_demand, [])
 

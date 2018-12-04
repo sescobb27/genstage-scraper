@@ -1,18 +1,6 @@
 defmodule Scraper do
-  @moduledoc """
-  Documentation for Scraper.
-  """
 
-  @doc """
-  Hello world.
+  def enqueue_links(adapter, url) do
 
-  ## Examples
-
-      iex> Scraper.hello
-      :world
-
-  """
-  def hello do
-    :world
   end
 end

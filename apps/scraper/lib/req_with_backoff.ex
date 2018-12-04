@@ -30,11 +30,11 @@ defmodule ReqWithBackoff do
 
       {:error, %HTTPoison.Error{reason: :timeout}} ->
         case retry(tries, options) do
-          {:ok, :retry} -> request(uri, options, tries + 1)
+          {:ok, :retry} -> request(uri, headers, options, tries + 1)
           {:error, :out_of_tries} -> {:error, :timeout}
         end
 
-      {:error, %HTTPoison.Error{reason: reason} = response} ->
+      {:error, response} ->
         {:error, response}
     end
   end
