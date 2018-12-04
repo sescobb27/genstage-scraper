@@ -27,7 +27,7 @@ defmodule Scraper.MixProject do
   defp deps do
     [
       {:httpoison, "~> 1.2.0"},
-      {:floki, "~> 0.20.3"},
+      {:floki, "~> 0.20.4"},
       {:geo, "~> 3.0"},
       {:gen_stage, "~> 0.14"},
 
