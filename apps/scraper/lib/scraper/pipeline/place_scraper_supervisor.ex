@@ -10,7 +10,7 @@ defmodule PlaceScraper.Scraper.Pipeline.PlaceScraperSupervisor do
   end
 
   def init(_) do
-    place_consumers_num = Application.get_env(:twd, :place_consumers_num, 5)
+    place_consumers_num = Application.get_env(:twd, :place_consumers_num, 20)
     partitions = 0..(place_consumers_num - 1)
 
     pagination_producer = worker(PaginationProducer, [partitions])
